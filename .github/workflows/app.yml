@@ -1,4 +1,4 @@
-name: CI/CD for react Todo 
+name: CI/CD for react data 
 
 on:
   push:
@@ -20,19 +20,19 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd todo
+          cd data
           npm install
 
       - name: Build Project
         run: |
-          cd todo
+          cd data
           npm run build
 
       - name: Upload artifact to enable deployment
         uses: actions/upload-artifact@v3
         with:
           name: poduction file
-          path: ./todo/build
+          path: ./data/build
 
   # Deploy Job
   deploy:
@@ -45,10 +45,10 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: poduction file
-          path: ./todo/build
+          path: ./data/build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.KEY }} #this is the key of the access token
-          publish_dir: ./todo/build
+          publish_dir: ./data/build
