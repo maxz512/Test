@@ -1,15 +1,15 @@
-const AWS = require('aws-sdk');
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+import { DynamoDB } from 'aws-sdk'; // Correct import syntax for ES Modules
+const dynamoDb = new DynamoDB.DocumentClient();
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     const body = JSON.parse(event.body);
-    
+
     const params = {
         TableName: 'Patients',
         Item: {
-            'id': body.id,
-            'name': body.name,
-            'status': body.status
+            id: body.id,
+            name: body.name,
+            status: body.status
         }
     };
 

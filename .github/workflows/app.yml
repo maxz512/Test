@@ -1,4 +1,4 @@
-name: CI/CD for react data 
+name: CI/CD for React with Lambda and DynamoDB
 
 on:
   push:
@@ -6,17 +6,17 @@ on:
       - main
 
 jobs:
-  # Build Job
+  # Build Job for React
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install Node
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: '16.x'
 
       - name: Install Dependencies
         run: |
@@ -28,27 +28,67 @@ jobs:
           cd data
           npm run build
 
-      - name: Upload artifact to enable deployment
+      - name: Upload Artifact for Deployment
         uses: actions/upload-artifact@v3
         with:
-          name: poduction file
+          name: production-file
           path: ./data/build
 
-  # Deploy Job
+  # Deploy React to GitHub Pages
   deploy:
-   
     needs: build
-    
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifact
+      - name: Download Artifact
         uses: actions/download-artifact@v3
         with:
-          name: poduction file
+          name: production-file
           path: ./data/build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.KEY }} #this is the key of the access token
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./data/build
+
+  # Lambda Deployment Job
+  deploy-lambda:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js for Lambda
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Bundle Lambda function
+        run: |
+          cd lambda
+          zip -r function.zip .
+
+      - name: Upload Lambda function to AWS
+        uses: aws-actions/aws-lambda-deploy-action@v1
+        with:
+          function-name: addPatientData
+          zip-file: ./lambda/function.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
